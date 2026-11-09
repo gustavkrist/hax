@@ -9,6 +9,10 @@ notes (see [docs/releasing.md](docs/releasing.md)).
 
 ### Added
 
+- OSC 7501 program status reports: hax now tells supporting terminals when it is working, done,
+  blocked on a confirmation, or idle, so tab and session indicators can show a turn that finished
+  or needs you while the window is unfocused. Select them with `notify=osc7501` (`HAX_NOTIFY`);
+  `auto` (the default) emits them on a terminal, and `off` disables them.
 - Man pages for offline reference: `man hax` for usage, plus `hax-config(5)`, `hax-sessions(5)`,
   and `hax-providers(7)`. Packages and source builds install them; the prebuilt binaries do not.
 

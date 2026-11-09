@@ -115,6 +115,7 @@ test_sources = [
     'terminal/test_interrupt.c',
     'terminal/test_live_region.c',
     'terminal/test_picker_core.c',
+    'terminal/test_program_status.c',
     'terminal/test_sgr.c',
     'terminal/test_theme.c',
     'terminal/test_vt_resolve.c',

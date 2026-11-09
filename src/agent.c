@@ -41,6 +41,7 @@
 #include "terminal/input_core.h"
 #include "terminal/interrupt.h"
 #include "terminal/notify.h"
+#include "terminal/program_status.h"
 #include "terminal/theme.h"
 #include "terminal/ui.h"
 #include "terminal/vt_resolve.h"
@@ -841,6 +842,7 @@ static int compact_conversation(struct agent_state *state, const char *instructi
     /* Before the status row shows, so it never paints another label first, nor a pause left from
      * an earlier turn. */
     footer_set_label(render->footer, "compacting", "compacting...");
+    program_status_report(PROGRAM_STATUS_WORKING, PROGRAM_STATUS_KIND_NONE, "compacting");
     interrupt_clear_requests();
     interrupt_arm();
     render_stream_begin(render);
@@ -1109,8 +1111,13 @@ int agent_run(struct provider **provider_io, const struct hax_opts *options)
     interrupt_set_fatal_signal_hook(bash_shell_pgids_kill);
 
     char prompt_buffer[64];
+    /* A done/error/blocked record stands until the user's next input; only then does the
+     * prompt's idle report replace it, so an absent user still finds the finished state. */
+    int status_unseen = 0;
 
     for (;;) {
+        if (!status_unseen)
+            program_status_report(PROGRAM_STATUS_IDLE, PROGRAM_STATUS_KIND_NONE, NULL);
         disp_block_separator(&render.disp);
         /* Only a resumable turn gives an empty send a meaning; otherwise
          * the editor keeps swallowing bare Enter. */
@@ -1120,6 +1127,7 @@ int agent_run(struct provider **provider_io, const struct hax_opts *options)
          * recolors the prompt instead of keeping the startup theme's bytes. */
         char *line = input_readline(input, build_prompt(prompt_buffer, sizeof(prompt_buffer)));
         cursor_hide();
+        status_unseen = 0;
         if (!line) {
             putchar('\n');
             break;
@@ -1257,11 +1265,15 @@ int agent_run(struct provider **provider_io, const struct hax_opts *options)
                     .task_note = repl_loop_task_note,
                 },
         };
+        program_status_report(PROGRAM_STATUS_WORKING, PROGRAM_STATUS_KIND_NONE, NULL);
         struct agent_loop_result loop_result;
         agent_loop_run(&loop_params, &loop_result);
         user_turn_context_tokens = loop_result.last_context_tokens;
         user_turn_errored = loop_result.outcome == AGENT_LOOP_PROVIDER_ERROR;
         int user_turn_complete = loop_result.outcome == AGENT_LOOP_COMPLETE;
+        enum agent_loop_outcome user_turn_outcome = loop_result.outcome;
+        char *user_turn_error =
+            loop_result.error_message ? xstrdup(loop_result.error_message) : NULL;
         set_resume_state(&state, &loop_result);
         agent_loop_result_destroy(&loop_result);
         interrupt_disarm();
@@ -1295,6 +1307,29 @@ int agent_run(struct provider **provider_io, const struct hax_opts *options)
                      state.resume_reason == AGENT_RESUME_MAX_TURNS)
                 state.compaction_deferred = 1;
         }
+
+        /* Interrupts and pauses were the user's own act, so the record returns to idle at
+         * once; anything else stands until their next input. */
+        switch (user_turn_outcome) {
+        case AGENT_LOOP_COMPLETE:
+            program_status_report(PROGRAM_STATUS_DONE, PROGRAM_STATUS_KIND_NONE, "ready");
+            status_unseen = 1;
+            break;
+        case AGENT_LOOP_PROVIDER_ERROR:
+            program_status_report(PROGRAM_STATUS_ERROR, PROGRAM_STATUS_KIND_NONE, user_turn_error);
+            status_unseen = 1;
+            break;
+        case AGENT_LOOP_MAX_TURNS:
+            program_status_report(PROGRAM_STATUS_BLOCKED, PROGRAM_STATUS_KIND_QUESTION,
+                                  "paused — enter to continue");
+            status_unseen = 1;
+            break;
+        case AGENT_LOOP_INTERRUPTED:
+        case AGENT_LOOP_PAUSED:
+            program_status_report(PROGRAM_STATUS_IDLE, PROGRAM_STATUS_KIND_NONE, NULL);
+            break;
+        }
+        free(user_turn_error);
 
         /* Esc means the user is already present; otherwise notify when the REPL becomes idle,
          * including errors and max-turn pauses. */

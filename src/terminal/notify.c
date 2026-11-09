@@ -14,6 +14,7 @@ enum notify_method {
     NOTIFY_METHOD_DISABLED,
     NOTIFY_METHOD_BEL,
     NOTIFY_METHOD_OSC9,
+    NOTIFY_METHOD_OSC7501,
 };
 
 /* Kitty consumes unsupported OSC 9, including its BEL terminator, so detect support positively. */
@@ -46,6 +47,8 @@ static enum notify_method select_notify_method(void)
         return NOTIFY_METHOD_BEL;
     if (configured_method && strcasecmp(configured_method, "osc9") == 0)
         return NOTIFY_METHOD_OSC9;
+    if (configured_method && strcasecmp(configured_method, "osc7501") == 0)
+        return NOTIFY_METHOD_OSC7501;
 
     const char *terminal_type = getenv("TERM");
     if (terminal_type && strcmp(terminal_type, "dumb") == 0)
@@ -74,6 +77,8 @@ void notify_attention(void)
 
     switch (method) {
     case NOTIFY_METHOD_DISABLED:
+    case NOTIFY_METHOD_OSC7501:
+        /* The done report standing on the terminal is the notification. */
         return;
     case NOTIFY_METHOD_BEL:
         fputs(ANSI_BEL, stdout);
@@ -83,4 +88,17 @@ void notify_attention(void)
         break;
     }
     fflush(stdout);
+}
+
+int notify_program_status_enabled(void)
+{
+    if (!isatty(STDERR_FILENO))
+        return 0;
+
+    const char *configured_method = config_str("notify");
+    if (configured_method && *configured_method && strcasecmp(configured_method, "auto") != 0)
+        return strcasecmp(configured_method, "osc7501") == 0;
+
+    const char *terminal_type = getenv("TERM");
+    return !terminal_type || strcmp(terminal_type, "dumb") != 0;
 }

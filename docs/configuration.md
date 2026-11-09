@@ -237,7 +237,7 @@ provider-dependent.
 | `sort_models` | `HAX_SORT_MODELS` | `auto` | Sort model picker newest-first (`on`), keep server order (`off`), or use provider default (sorted unless the provider opts out). |
 | `context_limit` | `HAX_CONTEXT_LIMIT` | auto | Override the model context-window size used for display and compaction. |
 | `display_width` | `HAX_DISPLAY_WIDTH` | `auto` | `auto`, `terminal`, or an exact width of at least 20 columns. |
-| `notify` | `HAX_NOTIFY` | `auto` | Completion notification: `auto`, `bel`, `osc9`, or `off`. |
+| `notify` | `HAX_NOTIFY` | `auto` | Completion notification: `auto`, `bel`, `osc9`, `osc7501`, or `off`. |
 | `theme` | `HAX_THEME` | `auto` | `auto`, `dark`, `light`, `ansi`, or `off`. |
 | `tint` | `HAX_TINT` | `teal` | Model-output tint: `teal`, `violet`, `rose`, or `sage`. |
 | `keep_awake` | `HAX_KEEP_AWAKE` | on | Best-effort idle-sleep inhibition while a turn runs. |
@@ -248,6 +248,15 @@ provider-dependent.
 `theme=auto` respects `NO_COLOR`, terminal color support, and `COLORFGBG` when available. Terminals
 rarely report a light background reliably, so set `light` explicitly if auto detection is wrong.
 `theme=ansi` uses the terminal's own 16-color palette; identity tints apply only to dark/light themes.
+
+With `notify=osc7501`, hax reports what it is doing as OSC 7501 program status: `working` while a
+turn runs, `done` or `error` when it finishes, `blocked` when a turn limit pauses for confirmation,
+and `idle` at the prompt. A finished or blocked report stands until your next input, so a terminal
+that shows these records — in a tab list or session picker — can tell you a turn needs attention
+while you are elsewhere; the report is also the completion notification, with no bell on top.
+`auto` emits these reports too, alongside its bell or OSC 9 notification; `bel`, `osc9`, and `off`
+decline them. Reports go to stderr, keeping piped stdout and the `--json` stream clean, and
+unsupported terminals ignore them.
 
 ### Recording
 

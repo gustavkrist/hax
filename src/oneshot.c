@@ -24,6 +24,7 @@
 #include "system/clock.h"
 #include "terminal/ansi.h"
 #include "terminal/interrupt.h"
+#include "terminal/program_status.h"
 #include "tools/bash_process.h"
 
 /* 128 + SIGINT, the shell convention for an interrupted command. */
@@ -512,6 +513,7 @@ static void run_user_turn(struct oneshot_state *state, const char *prompt, int m
         loop_params.hooks.turn_begin = json_turn_begin;
         loop_params.hooks.tool_seen = json_tool_seen;
     }
+    program_status_report(PROGRAM_STATUS_WORKING, PROGRAM_STATUS_KIND_NONE, NULL);
     agent_loop_run(&loop_params, loop_result);
 }
 
@@ -521,6 +523,22 @@ static int finish_run(struct oneshot_state *state, const struct agent_loop_resul
                       int max_turns)
 {
     state->context_tokens = loop_result->last_context_tokens;
+    /* An exiting program owes its terminal a final record: the result stays behind for the
+     * user to find, or idle when the user cancelled the run themselves. */
+    switch (loop_result->outcome) {
+    case AGENT_LOOP_COMPLETE:
+        program_status_report(PROGRAM_STATUS_DONE, PROGRAM_STATUS_KIND_NONE, "ready");
+        break;
+    case AGENT_LOOP_PROVIDER_ERROR:
+    case AGENT_LOOP_MAX_TURNS:
+        program_status_report(PROGRAM_STATUS_ERROR, PROGRAM_STATUS_KIND_NONE,
+                              loop_result->error_message);
+        break;
+    case AGENT_LOOP_INTERRUPTED:
+    case AGENT_LOOP_PAUSED:
+        program_status_report(PROGRAM_STATUS_IDLE, PROGRAM_STATUS_KIND_NONE, NULL);
+        break;
+    }
     /* The final turn ends with no hook after absorption, so drain its records before task
      * shutdown and the pricing wait below can delay them. */
     if (state->json)
