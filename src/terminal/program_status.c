@@ -3,10 +3,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "buf.h"
+#include "config.h"
 #include "terminal/ansi.h"
-#include "terminal/notify.h"
 #include "text/base64.h"
 #include "text/utf8.h"
 
@@ -104,8 +106,16 @@ char *program_status_sequence(enum program_status_state state, enum program_stat
 void program_status_report(enum program_status_state state, enum program_status_kind kind,
                            const char *msg)
 {
-    if (!notify_program_status_enabled())
+    int setting = config_tristate("program_status");
+    if (setting == 0)
         return;
+    if (setting < 0) {
+        if (!isatty(STDERR_FILENO))
+            return;
+        const char *term = getenv("TERM");
+        if (term && strcmp(term, "dumb") == 0)
+            return;
+    }
 
     size_t sequence_len;
     char *sequence =

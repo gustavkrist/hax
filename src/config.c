@@ -68,9 +68,13 @@ static const struct config_setting REGISTRY[] = {
      .choices = "auto|terminal", .example = "100", .kind = CONFIG_KIND_INT, .min = 20,
      .editable = 1},
     {.key = "notify", .env_var = "HAX_NOTIFY", .default_value = "auto",
-     .description = "Completion-notification style: auto, bel, osc9, osc7501, off "
-                    "(auto detects from the terminal; osc7501 reports program status)",
-     .choices = "auto|bel|osc9|osc7501|off", .editable = 1},
+     .description = "Desktop-notification style: auto, bel, osc9, off "
+                    "(auto detects from the terminal)",
+     .choices = "auto|bel|osc9|off", .editable = 1},
+    {.key = "program_status", .env_var = "HAX_PROGRAM_STATUS", .default_value = "auto",
+     .description = "OSC 7501 program status reports (idle/working/blocked/done/error): "
+                    "auto emits when stderr is a terminal, on always, off never",
+     .choices = CONFIG_CHOICES_TRISTATE, .editable = 1},
     {.key = "theme", .env_var = "HAX_THEME", .default_value = "auto",
      .description = "Color theme: auto, dark, light, ansi, off (auto detects from the terminal)",
      .choices = "auto|dark|light|ansi|off", .editable = 1},

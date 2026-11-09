@@ -11,8 +11,8 @@ notes (see [docs/releasing.md](docs/releasing.md)).
 
 - OSC 7501 program status reports: hax now tells supporting terminals when it is working, done,
   blocked on a confirmation, or idle, so tab and session indicators can show a turn that finished
-  or needs you while the window is unfocused. Select them with `notify=osc7501` (`HAX_NOTIFY`);
-  `auto` (the default) emits them on a terminal, and `off` disables them.
+  or needs you while the window is unfocused. Controlled by the new `program_status` setting
+  (`HAX_PROGRAM_STATUS`): `auto` (the default) emits on a terminal, `off` disables it.
 - Man pages for offline reference: `man hax` for usage, plus `hax-config(5)`, `hax-sessions(5)`,
   and `hax-providers(7)`. Packages and source builds install them; the prebuilt binaries do not.
 - Shift-Enter also inserts a newline when the terminal encodes it as CSI `27;<modifier>;13~`

@@ -31,9 +31,9 @@ enum program_status_kind {
 char *program_status_sequence(enum program_status_state state, enum program_status_kind kind,
                               const char *msg, int tmux_wrap, size_t *out_len);
 
-/* Emit a report on stderr when the notify setting enables program status reports (see
- * notify_program_status_enabled). stderr keeps reports out of piped stdout and the --json
- * stream; an interactive session has both on the same terminal. */
+/* Emit a report on stderr when the program_status setting allows it: on always, auto only
+ * when stderr is a terminal, off never. stderr keeps reports out of piped stdout and the
+ * --json stream; an interactive session has both on the same terminal. */
 void program_status_report(enum program_status_state state, enum program_status_kind kind,
                            const char *msg);
 
