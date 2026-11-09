@@ -15,6 +15,8 @@ notes (see [docs/releasing.md](docs/releasing.md)).
   `auto` (the default) emits them on a terminal, and `off` disables them.
 - Man pages for offline reference: `man hax` for usage, plus `hax-config(5)`, `hax-sessions(5)`,
   and `hax-providers(7)`. Packages and source builds install them; the prebuilt binaries do not.
+- Shift-Enter also inserts a newline when the terminal encodes it as CSI `27;<modifier>;13~`
+  (kitty keyboard protocol, xterm modifyOtherKeys), not only when it sends a literal LF.
 
 ### Changed
 

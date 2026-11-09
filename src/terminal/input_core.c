@@ -871,10 +871,22 @@ enum input_action input_core_decode_escape(input_byte_reader read, void *user)
         if (strcmp(seq, "200~") == 0)
             return INPUT_ACTION_PASTE_BEGIN;
 
+        char final = seq[n - 1];
+
+        /* kitty's protocol and xterm's modifyOtherKeys encode modified Enter as
+         * CSI 27;<modifier>;13~; treat it like the LF other terminals send. */
+        if (final == '~' && n >= 8 && strncmp(seq, "27;", 3) == 0 &&
+            strcmp(seq + n - 4, ";13~") == 0) {
+            int digits = 1;
+            for (int i = 3; i < n - 4; i++)
+                digits &= seq[i] >= '0' && seq[i] <= '9';
+            if (digits)
+                return INPUT_ACTION_INSERT_NEWLINE;
+        }
+
         /* xterm and rxvt vary the final byte for modified tilde keys, but modifiers do not
          * change these actions. Require a one-digit key code so function keys cannot alias
          * Home, End, or Delete. */
-        char final = seq[n - 1];
         if ((final == '~' || final == '^' || final == '$' || final == '@') &&
             (n == 2 || (n >= 4 && seq[1] == ';'))) {
             switch (seq[0]) {

@@ -1138,6 +1138,15 @@ static void test_decode_meta_letters(void)
     EXPECT(decode("\n") == INPUT_ACTION_INSERT_NEWLINE);
 }
 
+static void test_decode_modified_enter(void)
+{
+    /* kitty protocol / xterm modifyOtherKeys: CSI 27;<modifier>;13~. */
+    EXPECT(decode("[27;2;13~") == INPUT_ACTION_INSERT_NEWLINE); /* Shift+Enter */
+    EXPECT(decode("[27;5;13~") == INPUT_ACTION_INSERT_NEWLINE); /* Ctrl+Enter */
+    EXPECT(decode("[27;;13~") == INPUT_ACTION_NONE);
+    EXPECT(decode("[27;2x;13~") == INPUT_ACTION_NONE);
+}
+
 static void test_decode_paste_begin(void)
 {
     EXPECT(decode("[200~") == INPUT_ACTION_PASTE_BEGIN);
@@ -1304,6 +1313,7 @@ int main(void)
     test_decode_rxvt_tilde_finals();
     test_decode_iterm_meta_prefix();
     test_decode_meta_letters();
+    test_decode_modified_enter();
     test_decode_paste_begin();
     test_decode_partial_and_unknown();
     test_decode_overflow_and_runaway();

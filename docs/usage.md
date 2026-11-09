@@ -121,7 +121,7 @@ The editor supports common readline-style movement and history keys. Notable hax
 | Key | Action |
 | --- | --- |
 | Enter | Submit; at a paused empty prompt, continue without adding a message. |
-| Shift-Enter | Insert a newline if the terminal sends LF for it. |
+| Shift-Enter | Insert a newline if the terminal sends LF or the CSI `27;2;13~` encoding for it. |
 | Up / Down | Recall previous/next prompts. |
 | Ctrl-R | Search prompt history. |
 | Esc | Pause after the current step so you can steer. |
